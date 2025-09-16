@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Científica</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        :root {
+            --bg-color: #0c0e16;
+            --calc-bg: #1e2432;
+            --display-bg: #2b303e;
+            --text-color: #ffffff;
+            --btn-basic-bg: #4a5568;
+            --btn-op-bg: #e65252;
+            --btn-sci-bg: #384252;
+            --btn-clear-bg: #e53e3e;
+            --btn-eq-bg: #3f72af;
+            --btn-hover: #6a748b;
+            --shadow-light: rgba(0, 0, 0, 0.2);
+            --shadow-dark: rgba(0, 0, 0, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .calculator {
+            background-color: var(--calc-bg);
+            border-radius: 1.5rem;
+            padding: 20px;
+            box-shadow: 0 15px 30px var(--shadow-dark), 0 5px 10px var(--shadow-light);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .display {
+            background-color: var(--display-bg);
+            color: var(--text-color);
+            font-size: 2.5em;
+            text-align: right;
+            padding: 20px;
+            border-radius: 1rem;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .display::-webkit-scrollbar {
+            display: none;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+
+        .btn {
+            background-color: var(--btn-basic-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 1rem;
+            padding: 20px 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 6px var(--shadow-dark);
+            user-select: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            background-color: var(--btn-hover);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.operator {
+            background-color: var(--btn-op-bg);
+            font-weight: 600;
+        }
+        
+        .btn.scientific {
+            background-color: var(--btn-sci-bg);
+            font-size: 0.9em;
+        }
+
+        .btn.clear {
+            background-color: var(--btn-clear-bg);
+            grid-column: span 2;
+        }
+
+        .btn.equal {
+            background-color: var(--btn-eq-bg);
+            grid-column: span 2;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                padding: 15px;
+            }
+
+            .display {
+                font-size: 2em;
+                padding: 15px;
+            }
+
+            .buttons {
+                gap: 10px;
+            }
+
+            .btn {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <!-- Botões científicos -->
+            <button class="btn scientific" onclick="append('Math.sin(')">sen</button>
+            <button class="btn scientific" onclick="append('Math.cos(')">cos</button>
+            <button class="btn scientific" onclick="append('Math.tan(')">tan</button>
+            <button class="btn scientific" onclick="append('Math.log10(')">log</button>
+            <button class="btn scientific" onclick="append('Math.pow(')">x<sup>y</sup></button>
+
+            <!-- Botões de controle e parênteses -->
+            <button class="btn clear" onclick="clearDisplay()">C</button>
+            <button class="btn scientific" onclick="append('(')">(</button>
+            <button class="btn scientific" onclick="append(')')">)</button>
+            <button class="btn operator" onclick="append('/')">/</button>
+
+            <!-- Botões numéricos e de operação -->
+            <button class="btn" onclick="append('7')">7</button>
+            <button class="btn" onclick="append('8')">8</button>
+            <button class="btn" onclick="append('9')">9</button>
+            <button class="btn operator" onclick="append('*')">*</button>
+            <button class="btn scientific" onclick="append('Math.sqrt(')">√</button>
+
+            <button class="btn" onclick="append('4')">4</button>
+            <button class="btn" onclick="append('5')">5</button>
+            <button class="btn" onclick="append('6')">6</button>
+            <button class="btn operator" onclick="append('-')">-</button>
+            <button class="btn scientific" onclick="deleteLast()">DEL</button>
+
+            <button class="btn" onclick="append('1')">1</button>
+            <button class="btn" onclick="append('2')">2</button>
+            <button class="btn" onclick="append('3')">3</button>
+            <button class="btn operator" onclick="append('+')">+</button>
+            <button class="btn scientific" onclick="append('Math.E')">e</button>
+
+            <button class="btn" onclick="append('0')">0</button>
+            <button class="btn" onclick="append('.')">.</button>
+            <button class="btn scientific" onclick="append('Math.PI')">π</button>
+            <button class="btn equal" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        let currentExpression = '0';
+        let isResultDisplayed = false;
+
+        // Atualiza o display
+        function updateDisplay() {
+            display.textContent = currentExpression;
+        }
+
+        // Adiciona um valor à expressão
+        function append(value) {
+            // Se um resultado foi exibido e o próximo valor não é um operador, limpa o display
+            if (isResultDisplayed && !['+', '-', '*', '/', '(', ')', 'Math.pow(', 'Math.sqrt(', 'Math.sin(', 'Math.cos(', 'Math.tan(', 'Math.log10('].includes(value)) {
+                currentExpression = '';
+                isResultDisplayed = false;
+            }
+            isResultDisplayed = false;
+
+            // Se a expressão atual é '0', substitui pelo novo valor
+            if (currentExpression === '0') {
+                currentExpression = value;
+            } else {
+                currentExpression += value;
+            }
+            updateDisplay();
+        }
+
+        // Limpa o display
+        function clearDisplay() {
+            currentExpression = '0';
+            updateDisplay();
+        }
+
+        // Deleta o último caractere
+        function deleteLast() {
+            if (currentExpression.length > 1) {
+                currentExpression = currentExpression.slice(0, -1);
+            } else {
+                currentExpression = '0';
+            }
+            updateDisplay();
+        }
+
+        // Avalia a expressão e exibe o resultado
+        function calculate() {
+            try {
+                // Usa a função eval() para avaliar a expressão.
+                // ATENÇÃO: Em aplicações de produção, eval() pode ser perigoso devido a riscos de segurança (injeção de código).
+                // Para este exemplo, é uma solução simples. Em um projeto real, uma biblioteca de parser (como math.js) seria mais segura.
+                let result = eval(currentExpression);
+                
+                // Arredonda o resultado para evitar problemas de ponto flutuante, se necessário
+                if (result.toString().includes('.') && result.toString().split('.')[1].length > 5) {
+                    result = parseFloat(result.toFixed(6));
+                }
+
+                currentExpression = result.toString();
+                isResultDisplayed = true;
+                updateDisplay();
+            } catch (e) {
+                currentExpression = 'Erro!';
+                isResultDisplayed = true;
+                updateDisplay();
+            }
+        }
+
+        // Garante que o display inicial seja 0
+        updateDisplay();
+    </script>
+
+</body>
+</html>
